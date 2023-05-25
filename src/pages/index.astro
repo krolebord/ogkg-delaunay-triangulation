@@ -32,6 +32,7 @@
 		display: flex;
 		padding: 0 8px;
 		align-items: center;
+		gap: 8px;
 	}
 
 	canvas {
@@ -52,7 +53,10 @@
 	canvas.height = window.innerHeight - 40;
 
 	const points: Point[] = [
-
+		[0, 0],
+		[canvas.width, 0],
+		[canvas.width, canvas.height],
+		[0, canvas.height],
 	];
 
 	const draw = () => {

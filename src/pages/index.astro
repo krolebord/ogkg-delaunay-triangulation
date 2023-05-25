@@ -15,6 +15,7 @@
 				<button type="submit">Fill</button>
 			</form>
 			<button id="clear-btn">Clear</button>
+			<span id="time-display"></span>
 		</div>
 
 		<canvas id="canvas"></canvas>
@@ -46,13 +47,14 @@
 <script>
 	import { Point, Delaunay } from "../delaunay";
 
+	const timeDisplay = document.getElementById('time-display') as HTMLSpanElement;
 	const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 	const ctx = canvas.getContext('2d')!;
 
 	canvas.width = window.innerWidth - 16;
 	canvas.height = window.innerHeight - 40;
 
-	const points: Point[] = [
+	let points: Point[] = [
 		[0, 0],
 		[canvas.width, 0],
 		[canvas.width, canvas.height],
@@ -62,9 +64,15 @@
 	const draw = () => {
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-		points.sort((a, b) => a[0] - b[0]);
+		ctx.globalCompositeOperation = 'destination-over';
 
+		const start = performance.now();
+
+		points.sort((a, b) => a[0] - b[0]);
 		const triangles = new Delaunay(points).triangulate();
+
+		const end = performance.now();
+		timeDisplay.innerText = `Triangulation of ${points.length} points done in: ${Math.round((end - start) * 1000) / 1000}ms`;
 
 		const edges: [Point, Point][] = [];
 		for (let i = 0; i < triangles.length; i+=3) {
@@ -109,7 +117,12 @@
 	});
 
 	document.getElementById('clear-btn')!.addEventListener('click', () => {
-		points.length = 4;
+		points = [
+			[0, 0],
+			[canvas.width, 0],
+			[canvas.width, canvas.height],
+			[0, canvas.height],
+		];
 		draw();
 	});
 	

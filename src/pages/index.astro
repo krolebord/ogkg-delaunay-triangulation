@@ -1,15 +1,126 @@
 ---
 ---
-
 <html lang="en">
 	<head>
 		<meta charset="utf-8" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="viewport" content="width=device-width" />
 		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
+		<title>Delaunay Triangulation</title>
 	</head>
 	<body>
-		<h1>Astro</h1>
+		<div class="controls">
+			<form id="fill-form">
+				<input type="number" min="1" max="1000000" />
+				<button type="submit">Fill</button>
+			</form>
+			<button id="clear-btn">Clear</button>
+		</div>
+
+		<canvas id="canvas"></canvas>
 	</body>
 </html>
+
+<style>
+	html, body {
+		margin: 0;
+		padding: 0;
+	}
+
+	.controls {
+		height: 32px;
+		display: flex;
+		padding: 0 8px;
+		align-items: center;
+	}
+
+	canvas {
+		position: absolute;
+		top: 32px;
+		left: 8px;
+		border: 1px solid black;
+	}
+</style>
+
+<script>
+	import { Point, Delaunay } from "../delaunay";
+
+	const canvas = document.getElementById('canvas') as HTMLCanvasElement;
+	const ctx = canvas.getContext('2d')!;
+
+	canvas.width = window.innerWidth - 16;
+	canvas.height = window.innerHeight - 40;
+
+	const points: Point[] = [
+
+	];
+
+	const draw = () => {
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+		points.sort((a, b) => a[0] - b[0]);
+
+		const triangles = new Delaunay(points).triangulate();
+
+		const edges: [Point, Point][] = [];
+		for (let i = 0; i < triangles.length; i+=3) {
+			const v1 = triangles[i];
+			const v2 = triangles[i+1];
+			const v3 = triangles[i+2];
+
+			edges.push([v1, v2]);
+			edges.push([v2, v3]);
+			edges.push([v3, v1]);
+		}
+
+		points.forEach(point => {
+			ctx.beginPath();
+			ctx.arc(point[0], point[1], 5, 0, 2 * Math.PI);
+			ctx.fillStyle = 'orange';
+			ctx.fill();
+		});
+
+		edges.forEach(([a, b]) => {
+			if (!a || !b)
+				return;
+
+			ctx.beginPath();
+			ctx.moveTo(a[0], a[1]);
+			ctx.lineTo(b[0], b[1]);
+			ctx.strokeStyle = 'black';
+			ctx.stroke();
+		});
+	}
+
+	const screenPointToCanvas = (canvas: HTMLCanvasElement, point: Point): Point => {
+		const rect = canvas.getBoundingClientRect();
+		return [point[0] - rect.left, point[1] - rect.top];
+	}
+
+	canvas.addEventListener('click', (e) => {
+		const point = screenPointToCanvas(canvas, [e.clientX, e.clientY]);
+		points.push(point);
+
+		draw();
+	});
+
+	document.getElementById('clear-btn')!.addEventListener('click', () => {
+		points.length = 0;
+		draw();
+	});
+	
+	document.getElementById('fill-form')!.addEventListener('submit', (e: SubmitEvent) => {
+		e.preventDefault();
+		const input = document.querySelector<HTMLInputElement>('#fill-form input')!;
+		const count = parseInt(input.value);
+
+		for (let i = 0; i < count; i++) {
+			points.push([
+				Math.random() * canvas.width,
+				Math.random() * canvas.height,
+			]);
+		}
+
+		draw();
+	});
+</script>
